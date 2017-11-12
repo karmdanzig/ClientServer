@@ -34,11 +34,9 @@ Server::Server(std::string IP, int port) : IP(IP), port(port)
 
     char buffer[BUFFERSIZE];
     recv(clientSocket, buffer, BUFFERSIZE, 0);
-
     std::string firstCity = buffer;
     std::cout << "received from client " << firstCity << std::endl;
     recv(clientSocket, buffer, BUFFERSIZE, 0);
-
     std::string secondCity = buffer;
     std::cout << "received from client " << secondCity << std::endl;
 

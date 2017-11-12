@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
 
     if (strcmp(argv[1],"Client") == 0)
     {
-        Client("127.0.0.1", 5555);
+        Client("127.0.0.1", 5555, argv[2], argv[3]);
     }
     else if (strcmp(argv[1],"Server") == 0)
     {

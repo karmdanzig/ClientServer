@@ -9,7 +9,7 @@
 
 #define BUFFERSIZE 1024
 
-Client::Client(std::string IP, int port) : IP(IP), port(port)
+Client::Client(std::string IP, int port, std::string startingCity, std::string destinationCity) : IP(IP), port(port)
 {
     std::cout << "Client happily serving at " << IP << " on port " << port << std::endl;
 
@@ -19,20 +19,15 @@ Client::Client(std::string IP, int port) : IP(IP), port(port)
     socketStruct.sin_family = AF_INET;
     socketStruct.sin_addr.s_addr = inet_addr((this->IP).c_str());
     socketStruct.sin_port = htons(this->port);
-    connect(clientSocket,(struct sockaddr *) &socketStruct,sizeof(socketStruct));
+    connect(clientSocket,(struct sockaddr *)&socketStruct,sizeof(socketStruct));
 
-    std::string london = "London";
-    const char* toSend = london.c_str();
-    send(clientSocket, toSend, sizeof(toSend), 0);
-
-    std::string manchester = "Manchester";
-    toSend = manchester.c_str();
-    send(clientSocket, toSend, sizeof(manchester), 0);
+    send(clientSocket, startingCity.c_str(), sizeof(startingCity), 0);
+    send(clientSocket, destinationCity.c_str(), sizeof(destinationCity), 0);
 
     char response[BUFFERSIZE];
     recv(clientSocket, response, BUFFERSIZE-1, 0);
 
-    std::cout << response << std::endl;
+    std::cout << "The shortest path between " << startingCity << " and " << destinationCity << " is " << response << std::endl;
     close(clientSocket);
 }
 

@@ -7,7 +7,7 @@
 class Client
 {
     public:
-        Client(std::string IP, int port);
+        Client(std::string IP, int port, std::string startingCity, std::string destinationCity);
         virtual ~Client();
     private:
         std::string IP;
