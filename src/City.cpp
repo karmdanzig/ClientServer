@@ -1,14 +1,12 @@
 #include "City.h"
 #include <algorithm>
 
-City::City(std::string name, int points) : name(name), points(points)
+City::City(const std::string& name, const int points) : name(name), points(points)
 {
-    //ctor
 }
 
 City::~City()
 {
-    //dtor
 }
 
 void City::addNeighbor(City* toAdd)
@@ -27,37 +25,33 @@ void City::addNeighbor(City* toAdd)
     }
 }
 
-void City::printNeighbors()
-{
-
-    std::cout << "Neighbors for " << this->name << " are: "<< std::endl;
-
-    std::vector<City*>::iterator it = neighbors.begin();
-    for (it=neighbors.begin(); it!=neighbors.end(); ++it)
-        std::cout << (*it)->name << '\n';
-}
-
-void City::setPoints(int newPoints)
-{
-    this->points = newPoints;
-}
-
-int City::getPoints()
+const int City::getPoints() const
 {
     return this->points;
 }
 
-std::vector<City*> City::getNeighbors()
+const std::vector<City*>& City::getNeighbors() const
 {
-    return this->getNeighbors();
+    return this->neighbors;
 }
 
-std::string City::getName()
+const std::string& City::getName() const
 {
     return this->name;
 }
 
-void City::printCityInfo()
+bool operator<(const City& a, const City& b)
 {
-    std::cout << name << " " << points << std::endl;
+    return a.getName() < b.getName();
+}
+
+std::ostream& operator<<(std::ostream& out, const City& toPrint)
+{
+    out << toPrint.getName();
+    out << " with neighbors: ";
+    for(std::vector<City*>::const_iterator it = toPrint.neighbors.begin(); it != toPrint.neighbors.end(); ++it)
+    {
+        out << (*it)->getName() << " ";
+    }
+    return out;
 }

@@ -4,18 +4,21 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <unistd.h>
-#include <limits>
+#include <limits.h>
 #include <algorithm>
-#include <queue>
+#include <stack>
+#include <map>
 
 #define BUFFERSIZE 1024
 
 Server::Server(std::string IP, int port) : IP(IP), port(port)
 {
     std::cout << "Server happily serving at " << IP << " on port " << port << std::endl;
-    loadCities();
 
-    int serverSocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+    loadCities();
+    printCities();
+
+    int serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     int clientSocket = 0;
     sockaddr_in serverSocketStruct;
     sockaddr_in clientSocketStruct;
@@ -26,28 +29,43 @@ Server::Server(std::string IP, int port) : IP(IP), port(port)
     serverSocketStruct.sin_family = AF_INET;
     serverSocketStruct.sin_addr.s_addr = inet_addr((this->IP).c_str());
     serverSocketStruct.sin_port = htons(this->port);
-    bind(serverSocket, (struct sockaddr *)&serverSocketStruct, sizeof(serverSocketStruct));
-    listen(serverSocket, 0);
+
+    if (bind(serverSocket, (struct sockaddr*)&serverSocketStruct, sizeof(serverSocketStruct)) != 0)
+    {
+        exit(1);
+    }
+    if(listen(serverSocket, 0) != 0)
+    {
+        exit(1);
+    }
 
     unsigned int sizeOfClientSocketStruct = sizeof(clientSocketStruct);
-    clientSocket = accept(serverSocket, (struct sockaddr *)&clientSocketStruct, &sizeOfClientSocketStruct);
 
-    char buffer[BUFFERSIZE];
-    recv(clientSocket, buffer, BUFFERSIZE, 0);
-    std::string firstCity = buffer;
-    std::cout << "received from client " << firstCity << std::endl;
-    recv(clientSocket, buffer, BUFFERSIZE, 0);
-    std::string secondCity = buffer;
-    std::cout << "received from client " << secondCity << std::endl;
+    while(true)
+    {
+        clientSocket = accept(serverSocket, (struct sockaddr*)&clientSocketStruct, &sizeOfClientSocketStruct);
 
-    int points = returnPoints(firstCity, secondCity);
+        int pid = fork();
 
-    memset(buffer, 0, sizeof(buffer));
-    sprintf(buffer,"%d",points);
-    send(clientSocket, buffer, sizeof(buffer), 0);
+        if(pid == 0)
+        {
+            char buffer[BUFFERSIZE];
+            recv(clientSocket, buffer, BUFFERSIZE, 0);
+            std::string firstCity = buffer;
+            std::cout << "received from client " << firstCity << std::endl;
+            recv(clientSocket, buffer, BUFFERSIZE, 0);
+            std::string secondCity = buffer;
+            std::cout << "received from client " << secondCity << std::endl;
 
-    close(clientSocket);
-    close(serverSocket);
+            int points = 96;//returnPoints(firstCity, secondCity);
+
+            memset(buffer, 0, sizeof(buffer));
+            sprintf(buffer,"%d",points);
+            send(clientSocket, buffer, sizeof(buffer), 0);
+            close(serverSocket);
+            exit(0);
+        }
+    }
 }
 
 Server::~Server()
@@ -56,118 +74,118 @@ Server::~Server()
 
 void Server::loadCities()
 {
-    City london("London",5);
-    City birmingham("Birmingham",5);
-    City manchester("Manchester",5);
-    City liverpool("Liverpool",5);
+    City *london = new City("London",5);
+    City *birmingham = new City("Birmingham",5);
+    City *manchester = new City("Manchester",5);
+    City *liverpool = new City("Liverpool",5);
 
-    City glasgow("Glasgow",3);
-    City leeds("Leeds",3);
-    City edinburgh("Edinburgh",3);
-    City peterborough("Peterborough",3);
-    City newcastle("Newcastle",3);
-    City bath("Bath",3);
+    City *glasgow = new City("Glasgow",3);
+    City *leeds = new City("Leeds",3);
+    City *edinburgh = new City("Edinburgh",3);
+    City *peterborough = new City("Peterborough",3);
+    City *newcastle = new City("Newcastle",3);
+    City *bath = new City("Bath",3);
 
-    City brighton("Brighton",1);
-    City leicester("Leicester",1);
-    City oxford("Oxford",1);
-    City cambridge("Cambridge",1);
-    City sheffield("Sheffield",1);
-    City johnogroats("John O'Groats",1);
+    City *brighton = new City("Brighton",1);
+    City *leicester = new City("Leicester",1);
+    City *oxford = new City("Oxford",1);
+    City *cambridge = new City("Cambridge",1);
+    City *sheffield = new City("Sheffield",1);
+    City *johnogroats = new City("John O'Groats",1);
 
-    london.addNeighbor(&cambridge);
-    london.addNeighbor(&leicester);
-    london.addNeighbor(&oxford);
-    london.addNeighbor(&bath);
-    london.addNeighbor(&brighton);
+    london->addNeighbor(cambridge);
+    london->addNeighbor(leicester);
+    london->addNeighbor(oxford);
+    london->addNeighbor(bath);
+    london->addNeighbor(brighton);
 
-    brighton.addNeighbor(&london);
-    brighton.addNeighbor(&bath);
+    brighton->addNeighbor(london);
+    brighton->addNeighbor(bath);
 
-    bath.addNeighbor(&oxford);
-    bath.addNeighbor(&london);
-    bath.addNeighbor(&brighton);
+    bath->addNeighbor(oxford);
+    bath->addNeighbor(london);
+    bath->addNeighbor(brighton);
 
-    oxford.addNeighbor(&leicester);
-    oxford.addNeighbor(&london);
-    oxford.addNeighbor(&bath);
+    oxford->addNeighbor(leicester);
+    oxford->addNeighbor(london);
+    oxford->addNeighbor(bath);
 
-    cambridge.addNeighbor(&peterborough);
-    cambridge.addNeighbor(&london);
-    cambridge.addNeighbor(&leicester);
+    cambridge->addNeighbor(peterborough);
+    cambridge->addNeighbor(london);
+    cambridge->addNeighbor(leicester);
 
-    leicester.addNeighbor(&sheffield);
-    leicester.addNeighbor(&cambridge);
-    leicester.addNeighbor(&london);
-    leicester.addNeighbor(&birmingham);
+    leicester->addNeighbor(sheffield);
+    leicester->addNeighbor(cambridge);
+    leicester->addNeighbor(london);
+    leicester->addNeighbor(birmingham);
 
-    birmingham.addNeighbor(&liverpool);
-    birmingham.addNeighbor(&manchester);
-    birmingham.addNeighbor(&leicester);
-    birmingham.addNeighbor(&oxford);
+    birmingham->addNeighbor(liverpool);
+    birmingham->addNeighbor(manchester);
+    birmingham->addNeighbor(leicester);
+    birmingham->addNeighbor(oxford);
 
-    peterborough.addNeighbor(&sheffield);
-    peterborough.addNeighbor(&cambridge);
+    peterborough->addNeighbor(sheffield);
+    peterborough->addNeighbor(cambridge);
 
-    sheffield.addNeighbor(&leeds);
-    sheffield.addNeighbor(&leicester);
-    sheffield.addNeighbor(&peterborough);
-    sheffield.addNeighbor(&manchester);
+    sheffield->addNeighbor(leeds);
+    sheffield->addNeighbor(leicester);
+    sheffield->addNeighbor(peterborough);
+    sheffield->addNeighbor(manchester);
 
-    manchester.addNeighbor(&liverpool);
-    manchester.addNeighbor(&sheffield);
-    manchester.addNeighbor(&birmingham);
+    manchester->addNeighbor(liverpool);
+    manchester->addNeighbor(sheffield);
+    manchester->addNeighbor(birmingham);
 
-    liverpool.addNeighbor(&manchester);
-    liverpool.addNeighbor(&glasgow);
-    liverpool.addNeighbor(&edinburgh);
-    liverpool.addNeighbor(&birmingham);
+    liverpool->addNeighbor(manchester);
+    liverpool->addNeighbor(glasgow);
+    liverpool->addNeighbor(edinburgh);
+    liverpool->addNeighbor(birmingham);
 
-    leeds.addNeighbor(&newcastle);
-    leeds.addNeighbor(&sheffield);
+    leeds->addNeighbor(newcastle);
+    leeds->addNeighbor(sheffield);
 
-    newcastle.addNeighbor(&leeds);
-    newcastle.addNeighbor(&edinburgh);
+    newcastle->addNeighbor(leeds);
+    newcastle->addNeighbor(edinburgh);
 
-    edinburgh.addNeighbor(&johnogroats);
-    edinburgh.addNeighbor(&liverpool);
-    edinburgh.addNeighbor(&newcastle);
-    edinburgh.addNeighbor(&glasgow);
+    edinburgh->addNeighbor(johnogroats);
+    edinburgh->addNeighbor(liverpool);
+    edinburgh->addNeighbor(newcastle);
+    edinburgh->addNeighbor(glasgow);
 
-    glasgow.addNeighbor(&johnogroats);
-    glasgow.addNeighbor(&edinburgh);
-    glasgow.addNeighbor(&liverpool);
+    glasgow->addNeighbor(johnogroats);
+    glasgow->addNeighbor(edinburgh);
+    glasgow->addNeighbor(liverpool);
 
-    johnogroats.addNeighbor(&edinburgh);
-    johnogroats.addNeighbor(&glasgow);
+    johnogroats->addNeighbor(edinburgh);
+    johnogroats->addNeighbor(glasgow);
 
-    cities.push_back(london);
-    cities.push_back(birmingham);
-    cities.push_back(manchester);
-    cities.push_back(liverpool);
+    cities.push_back(*london);
+    cities.push_back(*birmingham);
+    cities.push_back(*manchester);
+    cities.push_back(*liverpool);
 
-    cities.push_back(glasgow);
-    cities.push_back(leeds);
-    cities.push_back(edinburgh);
-    cities.push_back(peterborough);
-    cities.push_back(newcastle);
-    cities.push_back(bath);
+    cities.push_back(*glasgow);
+    cities.push_back(*leeds);
+    cities.push_back(*edinburgh);
+    cities.push_back(*peterborough);
+    cities.push_back(*newcastle);
+    cities.push_back(*bath);
 
-    cities.push_back(brighton);
-    cities.push_back(leicester);
-    cities.push_back(oxford);
-    cities.push_back(cambridge);
-    cities.push_back(sheffield);
-    cities.push_back(johnogroats);
+    cities.push_back(*brighton);
+    cities.push_back(*leicester);
+    cities.push_back(*oxford);
+    cities.push_back(*cambridge);
+    cities.push_back(*sheffield);
+    cities.push_back(*johnogroats);
 }
 
 void Server::printCities()
 {
     std::cout << "cities contains:\n";
-    std::vector<City>::iterator it = cities.begin();
-    for (it=cities.begin(); it!=cities.end(); ++it)
+    std::vector<City>::const_iterator it;
+    for(it = cities.begin(); it != cities.end(); ++it)
     {
-        std::cout << it->getName()  << " with points " << it->getPoints() << '\n';
+        std::cout << *it << '\n';
     }
 }
 

@@ -9,7 +9,7 @@
 
 #define BUFFERSIZE 1024
 
-Client::Client(std::string IP, int port, std::string startingCity, std::string destinationCity) : IP(IP), port(port)
+Client::Client(const std::string& IP, const int port, const std::string& startingCity, const std::string& destinationCity) : IP(IP), port(port)
 {
     std::cout << "Client happily serving at " << IP << " on port " << port << std::endl;
 
@@ -19,7 +19,10 @@ Client::Client(std::string IP, int port, std::string startingCity, std::string d
     socketStruct.sin_family = AF_INET;
     socketStruct.sin_addr.s_addr = inet_addr((this->IP).c_str());
     socketStruct.sin_port = htons(this->port);
-    connect(clientSocket,(struct sockaddr *)&socketStruct,sizeof(socketStruct));
+    if(connect(clientSocket,(struct sockaddr *)&socketStruct,sizeof(socketStruct)) != 0)
+    {
+        exit(1);
+    }
 
     send(clientSocket, startingCity.c_str(), sizeof(startingCity), 0);
     send(clientSocket, destinationCity.c_str(), sizeof(destinationCity), 0);

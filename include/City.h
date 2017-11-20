@@ -8,15 +8,14 @@
 class City
 {
     public:
-        City(std::string name, int points);
+        City(const std::string& name, const int points);
         virtual ~City();
         void addNeighbor(City* toAdd);
-        void printNeighbors();
-        void setPoints(int newPoints);
-        int getPoints();
-        std::vector<City*> getNeighbors();
-        std::string getName();
-        void printCityInfo();
+        const int getPoints() const;
+        const std::vector<City*>& getNeighbors() const;
+        const std::string& getName() const;
+        friend bool operator<(const City& a, const City& b);
+        friend std::ostream& operator<<(std::ostream& out, const City& toPrint);
 
     private:
         int points;
