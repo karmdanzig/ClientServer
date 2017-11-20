@@ -9,7 +9,7 @@
 class Server
 {
     public:
-        Server(std::string IP, int port);
+        Server(const std::string& IP, const int port);
         virtual ~Server();
     private:
         std::string IP;
@@ -18,7 +18,9 @@ class Server
 
         void loadCities();
         void printCities();
-        int returnPoints(std::string &from, std::string &to);
+        bool checkIfCityExists(const std::string& nameOfCityToCheckIfExists);
+        int returnMinimumDistance(const std::string& from, const std::string& to);
+        City* returnCityByName(const std::string& nameOfCityToRetrieve);
         int shortestPath(City *fromC, City *toC);
 };
 

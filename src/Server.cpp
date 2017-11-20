@@ -11,7 +11,7 @@
 
 #define BUFFERSIZE 1024
 
-Server::Server(std::string IP, int port) : IP(IP), port(port)
+Server::Server(const std::string& IP, const int port) : IP(IP), port(port)
 {
     std::cout << "Server happily serving at " << IP << " on port " << port << std::endl;
 
@@ -57,12 +57,23 @@ Server::Server(std::string IP, int port) : IP(IP), port(port)
             std::string secondCity = buffer;
             std::cout << "received from client " << secondCity << std::endl;
 
-            int points = 96;//returnPoints(firstCity, secondCity);
+            int minimumDistance = returnMinimumDistance(firstCity, secondCity);
+            if(minimumDistance == -1)
+            {
+                memset(buffer, 0, sizeof(buffer));
+                sprintf(buffer,"%s","error");
+                send(clientSocket, buffer, sizeof(buffer), 0);
+                close(serverSocket);
+            }
+            else
+            {
+                memset(buffer, 0, sizeof(buffer));
+                sprintf(buffer,"%d",minimumDistance);
+                send(clientSocket, buffer, sizeof(buffer), 0);
+                close(serverSocket);
 
-            memset(buffer, 0, sizeof(buffer));
-            sprintf(buffer,"%d",points);
-            send(clientSocket, buffer, sizeof(buffer), 0);
-            close(serverSocket);
+            }
+
             exit(0);
         }
     }
@@ -181,44 +192,53 @@ void Server::loadCities()
 
 void Server::printCities()
 {
-    std::cout << "cities contains:\n";
-    std::vector<City>::const_iterator it;
-    for(it = cities.begin(); it != cities.end(); ++it)
+    std::cout << "Cities contains:\n";
+    for(std::vector<City>::const_iterator it = cities.begin(); it != cities.end(); ++it)
     {
         std::cout << *it << '\n';
     }
 }
 
-int Server::returnPoints(std::string &from, std::string &to)
+bool Server::checkIfCityExists(const std::string& nameOfCityToCheckIfExists)
 {
-    int result = -1;
-    City *fromC = NULL;
-    City *toC = NULL;
+    bool existentCity = false;
 
-    for(unsigned int i = 0; i < cities.size(); ++i)
+    for(std::vector<City>::const_iterator it = cities.begin(); it != cities.end(); ++it)
     {
-        if(cities.at(i).getName() == from)
+        if((*it).getName() == nameOfCityToCheckIfExists)
         {
-            fromC = &cities.at(i);
-        }
-        if(cities.at(i).getName() == to)
-        {
-            toC = &cities.at(i);
+            existentCity = true;
         }
     }
+    return existentCity;
+}
 
-    if(fromC == NULL || toC == NULL)
+int Server::returnMinimumDistance(const std::string& from, const std::string& to)
+{
+    if(!checkIfCityExists(from))
     {
-        std::cout << "Cities not found" << std::endl;
+        std::cout << from << " does not exist" << std::endl;
         return -1;
     }
+    if(!checkIfCityExists(to))
+    {
+        std::cout << to << " does not exist" << std::endl;
+        return -1;
+    }
+    return 1;
+}
 
-    std::cout << fromC->getName() << std::endl;
-    std::cout << toC->getName() << std::endl;
-
-    result = shortestPath(fromC, toC);
-
-    return result;
+City* Server::returnCityByName(const std::string& nameOfCityToRetrieve)
+{
+    City *current = NULL;
+    for(std::vector<City>::iterator it = cities.begin(); it != cities.end(); ++it)
+    {
+        if((*it).getName() == nameOfCityToRetrieve)
+        {
+            current = &(*it);
+        }
+    }
+    return current;
 }
 
 int Server::shortestPath(City *fromC, City *toC)

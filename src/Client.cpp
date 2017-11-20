@@ -36,5 +36,4 @@ Client::Client(const std::string& IP, const int port, const std::string& startin
 
 Client::~Client()
 {
-    //dtor
 }
