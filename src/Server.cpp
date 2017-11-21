@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <queue>
 #include <map>
+#include <thread>
 
 #define BUFFERSIZE 1024
 
@@ -16,7 +17,6 @@ Server::Server(const std::string& IP, const int port) : IP(IP), port(port)
     std::cout << "Server happily serving at " << IP << " on port " << port << std::endl;
 
     loadCities();
-    printCities();
 
     int serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     int clientSocket = 0;
@@ -44,37 +44,27 @@ Server::Server(const std::string& IP, const int port) : IP(IP), port(port)
     while(true)
     {
         clientSocket = accept(serverSocket, (struct sockaddr*)&clientSocketStruct, &sizeOfClientSocketStruct);
+        char buffer[BUFFERSIZE];
+        recv(clientSocket, buffer, BUFFERSIZE, 0);
+        std::string firstCity = buffer;
+        std::cout << "received from client " << firstCity << std::endl;
+        recv(clientSocket, buffer, BUFFERSIZE, 0);
+        std::string secondCity = buffer;
+        std::cout << "received from client " << secondCity << std::endl;
+        City *c1 = returnCityByName(firstCity);
+        City *c2 = returnCityByName(secondCity);
 
-        int pid = fork();
-
-        if(pid == 0)
+        if(c1 != nullptr && c2 != nullptr)
         {
-            char buffer[BUFFERSIZE];
-            recv(clientSocket, buffer, BUFFERSIZE, 0);
-            std::string firstCity = buffer;
-            std::cout << "received from client " << firstCity << std::endl;
-            recv(clientSocket, buffer, BUFFERSIZE, 0);
-            std::string secondCity = buffer;
-            std::cout << "received from client " << secondCity << std::endl;
-
-            int minimumDistance = shortestPath(returnCityByName(firstCity), returnCityByName(secondCity));
-            if(minimumDistance == -1)
-            {
-                memset(buffer, 0, sizeof(buffer));
-                sprintf(buffer,"%s","error");
-                send(clientSocket, buffer, sizeof(buffer), 0);
-                close(serverSocket);
-            }
-            else
-            {
-                memset(buffer, 0, sizeof(buffer));
-                sprintf(buffer,"%d",minimumDistance);
-                send(clientSocket, buffer, sizeof(buffer), 0);
-                close(serverSocket);
-
-            }
-
-            exit(0);
+            std::thread t(&Server::shortestPath, this, c1, c2, clientSocket);
+            t.detach();
+        }
+        else
+        {
+            memset(buffer, 0, sizeof(buffer));
+            sprintf(buffer,"%s","error");
+            send(clientSocket, buffer, sizeof(buffer), 0);
+            close(clientSocket);
         }
     }
 }
@@ -241,7 +231,7 @@ City* Server::returnCityByName(const std::string& nameOfCityToRetrieve)
     return current;
 }
 
-int Server::shortestPath(City *fromC, City *toC)
+void Server::shortestPath(const City *fromC, const City *toC, const int clientSocket)
 {
 	std::map< City*, int> cityWeights;
 	std::vector< City*> alreadyVisitedCities;
@@ -277,5 +267,14 @@ int Server::shortestPath(City *fromC, City *toC)
 
 	}
 
-	return cityWeights[returnCityByName(toC->getName())];
+    sendToClientFromThread(clientSocket, cityWeights[returnCityByName(toC->getName())]);
+}
+
+void Server::sendToClientFromThread(const int clientSocket, const int toSend)
+{
+    char buffer[BUFFERSIZE];
+    memset(buffer, 0, sizeof(buffer));
+    sprintf(buffer,"%d",toSend);
+    send(clientSocket, buffer, sizeof(buffer), 0);
+    close(clientSocket);
 }

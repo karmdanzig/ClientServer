@@ -15,13 +15,13 @@ class Server
         std::string IP;
         int port;
         std::vector<City> cities;
-
         void loadCities();
         void printCities();
         bool checkIfCityExists(const std::string& nameOfCityToCheckIfExists);
         int returnMinimumDistance(const std::string& from, const std::string& to);
         City* returnCityByName(const std::string& nameOfCityToRetrieve);
-        int shortestPath(City *fromC, City *toC);
+        void shortestPath(const City *fromC, const City *toC, const int clientSocket);
+        void sendToClientFromThread(const int clientSocket, const int toSend);
 };
 
 #endif // SERVER_H
