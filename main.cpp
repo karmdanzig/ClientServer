@@ -17,6 +17,10 @@ int main(int argc, char* argv[])
     {
         Server("127.0.0.1", 5555);
     }
+    else
+    {
+        std::cout << "wrong usage" << std::endl;
+    }
 
     return 0;
 }

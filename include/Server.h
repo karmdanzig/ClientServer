@@ -22,6 +22,7 @@ class Server
         City* returnCityByName(const std::string& nameOfCityToRetrieve);
         void shortestPath(const City *fromC, const City *toC, const int clientSocket);
         void sendToClientFromThread(const int clientSocket, const int toSend);
+        void addAnotherCity(const std::string& nameOfNewCity, const int points, const std::vector<std::string>& neighborCities);
 };
 
 #endif // SERVER_H

@@ -18,6 +18,13 @@ Server::Server(const std::string& IP, const int port) : IP(IP), port(port)
 
     loadCities();
 
+    std::vector<std::string> cit;
+    cit.push_back("London");
+
+    addAnotherCity("Crawley", 2, cit);
+
+    printCities();
+
     int serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     int clientSocket = 0;
     sockaddr_in serverSocketStruct;
@@ -277,4 +284,19 @@ void Server::sendToClientFromThread(const int clientSocket, const int toSend)
     sprintf(buffer,"%d",toSend);
     send(clientSocket, buffer, sizeof(buffer), 0);
     close(clientSocket);
+}
+
+void Server::addAnotherCity(const std::string& nameOfNewCity, const int points, const std::vector<std::string>& neighborCities)
+{
+    City *newCity = new City(nameOfNewCity, points);
+
+    for(std::vector<std::string>::const_iterator it = neighborCities.begin(); it != neighborCities.end(); ++it)
+    {
+        City *curr = returnCityByName(*it);
+        newCity->addNeighbor(curr);
+        curr->addNeighbor(newCity);
+    }
+
+    cities.push_back(*newCity);
+
 }
