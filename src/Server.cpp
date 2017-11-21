@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include <algorithm>
-#include <stack>
+#include <queue>
 #include <map>
 
 #define BUFFERSIZE 1024
@@ -57,7 +57,7 @@ Server::Server(const std::string& IP, const int port) : IP(IP), port(port)
             std::string secondCity = buffer;
             std::cout << "received from client " << secondCity << std::endl;
 
-            int minimumDistance = returnMinimumDistance(firstCity, secondCity);
+            int minimumDistance = shortestPath(returnCityByName(firstCity), returnCityByName(secondCity));
             if(minimumDistance == -1)
             {
                 memset(buffer, 0, sizeof(buffer));
@@ -243,5 +243,39 @@ City* Server::returnCityByName(const std::string& nameOfCityToRetrieve)
 
 int Server::shortestPath(City *fromC, City *toC)
 {
-    return 0;
+	std::map< City*, int> cityWeights;
+	std::vector< City*> alreadyVisitedCities;
+
+	for (std::vector<City>::iterator it = cities.begin(); it != cities.end(); ++it)
+	{
+		cityWeights.insert(std::pair< City*, int>(&(*it), INT_MAX));
+	}
+
+	cityWeights[returnCityByName((fromC)->getName())] = 0;
+
+	std::queue<City*> queue;
+	queue.push(returnCityByName(fromC->getName()));
+
+	while (!queue.empty())
+	{
+		City *top = queue.front();
+		queue.pop();
+		alreadyVisitedCities.push_back(top);
+
+		std::vector<City*> cc = top->getNeighbors();
+		for (std::vector<City*>::iterator it2 = cc.begin(); it2 != cc.end(); ++it2)
+		{
+			if (std::find(alreadyVisitedCities.begin(), alreadyVisitedCities.end(), *it2) == alreadyVisitedCities.end())
+			{
+				queue.push(*it2);
+				if (cityWeights[returnCityByName((*it2)->getName())] > cityWeights[returnCityByName((top)->getName())] + (*it2)->getPoints())
+				{
+					cityWeights[returnCityByName((*it2)->getName())] = cityWeights[returnCityByName((top)->getName())] + (*it2)->getPoints();
+				}
+			}
+		}
+
+	}
+
+	return cityWeights[returnCityByName(toC->getName())];
 }
