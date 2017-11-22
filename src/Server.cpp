@@ -248,7 +248,7 @@ void Server::shortestPath(const City *fromC, const City *toC, const int clientSo
 		cityWeights.insert(std::pair< City*, int>(&(*it), INT_MAX));
 	}
 
-	cityWeights[returnCityByName((fromC)->getName())] = 0;
+	cityWeights[returnCityByName((fromC)->getName())] = fromC->getPoints();
 
 	std::queue<City*> queue;
 	queue.push(returnCityByName(fromC->getName()));
