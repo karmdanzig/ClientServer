@@ -286,17 +286,37 @@ void Server::sendToClientFromThread(const int clientSocket, const int toSend)
     close(clientSocket);
 }
 
-void Server::addAnotherCity(const std::string& nameOfNewCity, const int points, const std::vector<std::string>& neighborCities)
+bool Server::addAnotherCity(const std::string& toParse)
 {
-    City *newCity = new City(nameOfNewCity, points);
+	bool resultCode = false;
 
-    for(std::vector<std::string>::const_iterator it = neighborCities.begin(); it != neighborCities.end(); ++it)
-    {
-        City *curr = returnCityByName(*it);
-        newCity->addNeighbor(curr);
-        curr->addNeighbor(newCity);
-    }
+	const char separator = '|';
+	std::vector<std::string> tokens;
+	std::istringstream split(toParse);
+	for (std::string each; std::getline(split, each, separator); tokens.push_back(each));
+	
+	std::vector<std::string> neighbors(tokens.begin() + 2, tokens.end());
 
-    cities.push_back(*newCity);
+	City *newCity = new City(tokens[0], std::stoi(tokens[1]));
 
+	for (std::vector<std::string>::const_iterator it = neighbors.begin(); it != neighbors.end(); ++it)
+	{
+		City *neighbor = returnCityByName(*it);
+
+		if (dynamic_cast<City*>(neighbor))
+		{
+			newCity->addNeighbor(neighbor);
+			neighbor->addNeighbor(newCity);
+		}
+		else
+		{
+			std::cout << "Neighbor not found" << std::endl;
+			delete newCity;
+			return resultCode;
+		}
+	
+	}
+	resultCode = true;
+	cities.push_back(*newCity);
+	return resultCode;
 }
