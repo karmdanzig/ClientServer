@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "ClientAdmin.h"
 #include <stdio.h>
 #include <sys/socket.h>
