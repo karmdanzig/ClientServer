@@ -21,12 +21,17 @@ ClientAdmin::ClientAdmin(const std::string& IP, const int port) : IP(IP), port(p
 	std::cin >> pointsOfCity;
 	if (pointsOfCity == 0)
 	{
-		std::cout << "value cannot be zero" << std::endl;
+		std::cout << "Points value cannot be zero" << std::endl;
 		return;
 	}
 	std::cout << "Enter number of neighbors " << std::endl;
 	unsigned short numberOfNeighbors = 0;
 	std::cin >> numberOfNeighbors;
+	if (numberOfNeighbors == 0)
+	{
+		std::cout << "Neighbors cannot be zero" << std::endl;
+		return;
+	}
 	std::string inputNeighbor;
 	std::string neighbors;
 	for (unsigned short i = 1; i <= numberOfNeighbors; ++i)
@@ -45,11 +50,11 @@ ClientAdmin::ClientAdmin(const std::string& IP, const int port) : IP(IP), port(p
 		}
 		else
 		{
-			neighbors += inputNeighbor + ",";
+			neighbors += inputNeighbor + "|";
 		}
 		
 	}
-	toSend = nameOfCity + "," + std::to_string(pointsOfCity) + "," + neighbors;
+	toSend = nameOfCity + "|" + std::to_string(pointsOfCity) + "|" + neighbors;
 
 	std::cout << toSend << std::endl;
 
