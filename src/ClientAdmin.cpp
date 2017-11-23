@@ -8,7 +8,7 @@
 
 #define BUFFERSIZE 1024
 
-ClientAdmin::ClientAdmin(const std::string& IP, const int port)
+ClientAdmin::ClientAdmin(const std::string& IP, const int& port)
     : m_IP(IP), m_port(port), m_clientSocket(socket(PF_INET, SOCK_STREAM, IPPROTO_TCP))
 {
     std::cout << "ClientAdmin happily serving at " << m_IP << " on port " << m_port << std::endl;
