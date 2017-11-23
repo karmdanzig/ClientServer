@@ -28,7 +28,7 @@ private:
     void printCities();
     City* returnCityByName(const std::string& nameOfCityToRetrieve);
     void getMinimumDistanceAndSendBackToClient(const City *departureCity, const City *destinationCity);
-    int shortestPath(const City *departureCity, const City *destinationCity);
+    std::string shortestPath(const City *departureCity, const City *destinationCity);
     void sendResultToClient(const std::string& toSend);
     std::string addAnotherCity(const std::string& toParse);
     void addCityToCurrentListAndSendBackToClient(const std::string& toParse);
