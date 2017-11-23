@@ -7,7 +7,7 @@
 
 #define BUFFERSIZE 1024
 
-Client::Client(const std::string& IP, const int port)
+Client::Client(const std::string& IP, const int& port)
     : m_IP(IP), m_port(port), m_clientSocket(socket(PF_INET, SOCK_STREAM, IPPROTO_TCP))
 {
     std::cout << "Client happily serving at " << IP << " on port " << port << std::endl;
