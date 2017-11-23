@@ -24,14 +24,14 @@ int main(int argc, char* argv[])
         c.init();
         c.sendRequestToServer(argv[2], argv[3]);
     }
-    else if (strcmp(argv[1],"Server") == 0)
+    else if (option1 == "Server")
     {
         Server s("127.0.0.1", 5555);
         s.loadCities();
         s.init();
         s.receiveFromClient();
     }
-    else if (strcmp(argv[1],"ClientAdmin") == 0)
+    else if (option1 == "ClientAdmin")
     {
             ClientAdmin ca("127.0.0.1", 5555);
             ca.init();
