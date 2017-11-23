@@ -258,6 +258,8 @@ std::string Server::shortestPath(const City *departureCity, const City *destinat
 
     std::string finalString = "The shortest path between " + departureCity->getName() + " and " + destinationCity->getName();
 
+    std::vector<std::string> path;
+
     if (previous[returnCityByName((destinationCity)->getName())]->getName() != departureCity->getName())
     {
         finalString += " is via ";
@@ -265,9 +267,15 @@ std::string Server::shortestPath(const City *departureCity, const City *destinat
         std::string nameOfCurrentCity = current->getName();
         while (nameOfCurrentCity != departureCity->getName())
         {
-            finalString += nameOfCurrentCity + " ";
             current = previous[returnCityByName((current)->getName())];
             nameOfCurrentCity = current->getName();
+            path.push_back(nameOfCurrentCity);
+        }
+
+        std::reverse(path.begin(), path.end());
+        for(std::vector<std::string>::iterator it = path.begin()+1; it != path.end(); ++it)
+        {
+            finalString += *it + " ";
         }
         finalString += "and";
     }
