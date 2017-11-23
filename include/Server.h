@@ -10,7 +10,7 @@
 class Server
 {
 public:
-    Server(const std::string& IP, const int port);
+    Server(const std::string& IP, const int& port);
     virtual ~Server();
     void init();
     void loadCities();
