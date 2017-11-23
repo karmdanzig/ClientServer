@@ -42,43 +42,41 @@ void Server::init()
 
 void Server::receiveFromClient()
 {
-	unsigned int sizeOfClientSocketStruct = sizeof(m_clientSocketStruct);
+    unsigned int sizeOfClientSocketStruct = sizeof(m_clientSocketStruct);
 
-	while(true)
-	{
+    while(true)
+    {
+        m_clientSocket = accept(m_serverSocket, (struct sockaddr*)&m_clientSocketStruct, &sizeOfClientSocketStruct);
+        char buffer[BUFFERSIZE];
+        recv(m_clientSocket, buffer, BUFFERSIZE, 0);
 
-		m_clientSocket = accept(m_serverSocket, (struct sockaddr*)&m_clientSocketStruct, &sizeOfClientSocketStruct);
-		char buffer[BUFFERSIZE];
-		recv(m_clientSocket, buffer, BUFFERSIZE, 0);
+        if(std::string(buffer) == "findpath")
+        {
+            recv(m_clientSocket, buffer, BUFFERSIZE, 0);
+            std::string firstCity = buffer;
+            std::cout << "received from client " << firstCity << std::endl;
+            recv(m_clientSocket, buffer, BUFFERSIZE, 0);
+            std::string secondCity = buffer;
+            std::cout << "received from client " << secondCity << std::endl;
+            City *c1 = returnCityByName(firstCity);
+            City *c2 = returnCityByName(secondCity);
 
-		if(std::string(buffer) == "findpath")
-		{
-			recv(m_clientSocket, buffer, BUFFERSIZE, 0);
-			std::string firstCity = buffer;
-			std::cout << "received from client " << firstCity << std::endl;
-			recv(m_clientSocket, buffer, BUFFERSIZE, 0);
-			std::string secondCity = buffer;
-			std::cout << "received from client " << secondCity << std::endl;
-			City *c1 = returnCityByName(firstCity);
-			City *c2 = returnCityByName(secondCity);
-
-			if(c1 != nullptr && c2 != nullptr)
-			{
-				std::thread t(&Server::getMinimumDistanceAndSendBackToClient, this, c1, c2);
-				t.detach();
-			}
-			else
-			{
-				sendResultToClient("error");
-			}
-		}
-		else
-		{
-			std::thread t(&Server::addCityToCurrentListAndSendBackToClient, this, buffer);
-			t.detach();
-		}
-
-	}
+            if(c1 != nullptr && c2 != nullptr)
+            {
+                std::thread t(&Server::getMinimumDistanceAndSendBackToClient, this, c1, c2);
+                t.detach();
+            }
+            else
+            {
+                sendResultToClient("error");
+            }
+        }
+        else
+        {
+            std::thread t(&Server::addCityToCurrentListAndSendBackToClient, this, buffer);
+            t.detach();
+        }
+    }
 }
 
 void Server::loadCities()
@@ -210,104 +208,126 @@ City* Server::returnCityByName(const std::string& nameOfCityToRetrieve)
     return current;
 }
 
-int Server::shortestPath(const City *departureCity, const City *destinationCity)
+std::string Server::shortestPath(const City *departureCity, const City *destinationCity)
 {
-	std::map<City*, int> cityWeights;
-	std::vector<City*> alreadyVisitedCities;
+    std::map<City*, int> cityWeights;
+    std::map<City*, City*> previous;
+    std::vector<City*> alreadyVisitedCities;
+	
+    for (std::vector<City>::iterator it = m_cities.begin(); it != m_cities.end(); ++it)
+    {
+        cityWeights.insert(std::pair<City*, int>(&(*it), INT_MAX));
+        previous.insert(std::pair<City*, City*>(&(*it), NULL));
+    }
 
-	for (std::vector<City>::iterator it = m_cities.begin(); it != m_cities.end(); ++it)
-	{
-		cityWeights.insert(std::pair< City*, int>(&(*it), INT_MAX));
-	}
+    cityWeights[returnCityByName((departureCity)->getName())] = departureCity->getPoints();
+    std::queue<City*> queue;
+    queue.push(returnCityByName(departureCity->getName()));
 
-	cityWeights[returnCityByName((departureCity)->getName())] = departureCity->getPoints();
+    while (!queue.empty())
+    {
+        City *top = queue.front();
+        queue.pop();
+        alreadyVisitedCities.push_back(top);
+        std::vector<City*> cc = top->getNeighbors();
 
-	std::queue<City*> queue;
-	queue.push(returnCityByName(departureCity->getName()));
+        int min = cityWeights[returnCityByName((*cc.begin())->getName())];
+        for (std::vector<City*>::iterator it2 = cc.begin(); it2 != cc.end(); ++it2)
+        {
+            if (std::find(alreadyVisitedCities.begin(), alreadyVisitedCities.end(), *it2) == alreadyVisitedCities.end())
+            {
+                queue.push(*it2);
+                if (cityWeights[returnCityByName((*it2)->getName())] > cityWeights[returnCityByName((top)->getName())] + (*it2)->getPoints())
+                {
+                    cityWeights[returnCityByName((*it2)->getName())] = cityWeights[returnCityByName((top)->getName())] + (*it2)->getPoints();
+                }
+            }
 
-	while (!queue.empty())
-	{
-		City *top = queue.front();
-		queue.pop();
-		alreadyVisitedCities.push_back(top);
+            if (min >= cityWeights[returnCityByName((*it2)->getName())])
+            {
+                previous[returnCityByName((top)->getName())] = returnCityByName((*it2)->getName());
+                min = cityWeights[returnCityByName((*it2)->getName())];
+            }
+        }		
+    }
 
-		std::vector<City*> cc = top->getNeighbors();
-		for (std::vector<City*>::iterator it2 = cc.begin(); it2 != cc.end(); ++it2)
-		{
-			if (std::find(alreadyVisitedCities.begin(), alreadyVisitedCities.end(), *it2) == alreadyVisitedCities.end())
-			{
-				queue.push(*it2);
-				if (cityWeights[returnCityByName((*it2)->getName())] > cityWeights[returnCityByName((top)->getName())] + (*it2)->getPoints())
-				{
-					cityWeights[returnCityByName((*it2)->getName())] = cityWeights[returnCityByName((top)->getName())] + (*it2)->getPoints();
-				}
-			}
-		}
+    std::string finalString = "The shortest path between " + departureCity->getName() + " and " + destinationCity->getName();
 
-	}
+    if (previous[returnCityByName((destinationCity)->getName())]->getName() != departureCity->getName())
+    {
+        finalString += " is via ";
+        City *current = returnCityByName((destinationCity)->getName());
+        while (previous[returnCityByName((current)->getName())]->getName() != departureCity->getName())
+        {
+            finalString += previous[returnCityByName((current)->getName())]->getName() + " ";
+            current = previous[returnCityByName((current)->getName())];
+        }
+        finalString += "and";
+    }
 
-    return cityWeights[returnCityByName(destinationCity->getName())];
+    finalString += " has " + std::to_string(cityWeights[returnCityByName(destinationCity->getName())]);
+    finalString += " points";
+
+    return finalString;
 }
 
 void Server::getMinimumDistanceAndSendBackToClient(const City* departureCity, const City* destinationCity)
 {
-	int minimumDistance = shortestPath(departureCity, destinationCity);
-	sendResultToClient(std::to_string(minimumDistance));
+    std::string minimumDistanceWithPath = shortestPath(departureCity, destinationCity);
+    sendResultToClient(minimumDistanceWithPath);
 }
 
 std::string Server::addAnotherCity(const std::string& toParse)
 {
-	std::string resultCode;
+    std::string resultCode;
 
-	const char separator = '|';
-	std::vector<std::string> tokens;
-	std::istringstream split(toParse);
-	for (std::string each; std::getline(split, each, separator); tokens.push_back(each));
+    const char separator = '|';
+    std::vector<std::string> tokens;
+    std::istringstream split(toParse);
+    for (std::string each; std::getline(split, each, separator); tokens.push_back(each));
 
-	std::vector<std::string> neighbors(tokens.begin() + 2, tokens.end());
+    std::vector<std::string> neighbors(tokens.begin() + 2, tokens.end());
 
-	for (std::vector<City>::iterator it = m_cities.begin(); it != m_cities.end(); ++it)
-	{
-		if (it->getName() == tokens[0])
-		{
-			resultCode = tokens[0] + " already present";
-			return resultCode;
-		}
+    for (std::vector<City>::iterator it = m_cities.begin(); it != m_cities.end(); ++it)
+    {
+        if (it->getName() == tokens[0])
+        {
+            resultCode = tokens[0] + " already present";
+            return resultCode;
+        }
+    }
 
-	}
+    City *newCity = new City(tokens[0], std::stoi(tokens[1]));
 
-	City *newCity = new City(tokens[0], std::stoi(tokens[1]));
+    for (std::vector<std::string>::const_iterator it = neighbors.begin(); it != neighbors.end(); ++it)
+    {
+        City *neighbor = returnCityByName(*it);
 
-	for (std::vector<std::string>::const_iterator it = neighbors.begin(); it != neighbors.end(); ++it)
-	{
-		City *neighbor = returnCityByName(*it);
+        if (!dynamic_cast<City*>(neighbor))
+        {
+            resultCode = "Invalid neighbor " + *it;
+            delete newCity;
+            return resultCode;
+        }
+    }
 
-		if (!dynamic_cast<City*>(neighbor))
-		{
-			resultCode = "Invalid neighbor " + *it;
-			delete newCity;
-			return resultCode;
-		}
+    for (std::vector<std::string>::const_iterator it = neighbors.begin(); it != neighbors.end(); ++it)
+    {
+        City *neighbor = returnCityByName(*it);
+        newCity->addNeighbor(neighbor);
+        neighbor->addNeighbor(newCity);
+    }
 
-	}
-
-	for (std::vector<std::string>::const_iterator it = neighbors.begin(); it != neighbors.end(); ++it)
-	{
-		City *neighbor = returnCityByName(*it);
-		newCity->addNeighbor(neighbor);
-		neighbor->addNeighbor(newCity);
-	}
-
-	resultCode = "Success";
-	m_cities.push_back(*newCity);
-	return resultCode;
+    resultCode = "Success";
+    m_cities.push_back(*newCity);
+    return resultCode;
 }
 
 void Server::addCityToCurrentListAndSendBackToClient(const std::string& toParse)
 {
-	std::string resultCode = addAnotherCity(toParse);
-	sendResultToClient(resultCode);
-	printCities();
+    std::string resultCode = addAnotherCity(toParse);
+    sendResultToClient(resultCode);
+    printCities();
 }
 
 void Server::sendResultToClient(const std::string& toSend)
