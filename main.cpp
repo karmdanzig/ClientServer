@@ -1,5 +1,4 @@
 #include <iostream>
-#include <sys/socket.h>
 #include <string.h>
 #include "Server.h"
 #include "Client.h"
@@ -24,14 +23,14 @@ int main(int argc, char* argv[])
         s.receiveFromClient();
     }
     else if (strcmp(argv[1],"ClientAdmin") == 0)
-	{
-		ClientAdmin ca("127.0.0.1", 5555);
-		ca.init();
-		ca.sendRequestToServer();
-	}
+    {
+            ClientAdmin ca("127.0.0.1", 5555);
+            ca.init();
+            ca.sendRequestToServer();
+    }
     else
     {
-        std::cout << "wrong usage" << std::endl;
+        std::cout << "Wrong usage" << std::endl;
     }
 
     return 0;
