@@ -12,7 +12,7 @@
 
 #define BUFFERSIZE 1024
 
-Server::Server(const std::string& IP, const int port) :
+Server::Server(const std::string& IP, const int& port) :
     m_IP(IP), m_port(port), m_serverSocket(socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)), m_clientSocket(0)
 {
     std::cout << "Server happily serving at " << IP << " on port " << port << std::endl;
