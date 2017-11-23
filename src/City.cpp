@@ -1,7 +1,7 @@
 #include "City.h"
 #include <algorithm>
 
-City::City(const std::string& name, const int points) : m_name(name), m_points(points)
+City::City(const std::string& name, const int& points) : m_name(name), m_points(points)
 {
 }
 
@@ -27,17 +27,17 @@ void City::addNeighbor(City* toAdd)
 
 const int City::getPoints() const
 {
-    return this->m_points;
+    return m_points;
 }
 
 const std::vector<City*>& City::getNeighbors() const
 {
-    return this->m_neighbors;
+    return m_neighbors;
 }
 
 const std::string& City::getName() const
 {
-    return this->m_name;
+    return m_name;
 }
 
 bool operator<(const City& a, const City& b)
