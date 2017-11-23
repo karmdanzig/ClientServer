@@ -9,7 +9,7 @@ class Client
 {
 public:
     Client(const std::string& IP, const int& port);
-    virtual ~Client();
+    ~Client();
     void init();
     void sendRequestToServer(const std::string& startingCity, const std::string& destinationCity);
 
