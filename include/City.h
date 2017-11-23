@@ -18,8 +18,8 @@ public:
     friend std::ostream& operator<<(std::ostream& out, const City& toPrint);
 
 private:
-    int m_points;
     std::string m_name;
+    int m_points;
     std::vector<City*> m_neighbors;
 };
 
