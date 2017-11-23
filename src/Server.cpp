@@ -229,24 +229,29 @@ std::string Server::shortestPath(const City *departureCity, const City *destinat
         City *top = queue.front();
         queue.pop();
         alreadyVisitedCities.push_back(top);
-        std::vector<City*> cc = top->getNeighbors();
+        std::vector<City*> neighborsOfCurrentCity = top->getNeighbors();
 
-        int min = cityWeights[returnCityByName((*cc.begin())->getName())];
-        for (std::vector<City*>::iterator it2 = cc.begin(); it2 != cc.end(); ++it2)
+        int min = cityWeights[returnCityByName((*neighborsOfCurrentCity.begin())->getName())];
+        for (std::vector<City*>::iterator it2 = neighborsOfCurrentCity.begin(); it2 != neighborsOfCurrentCity.end(); ++it2)
         {
+            City* currentCity = returnCityByName((top)->getName());
+            City* neighborCity = returnCityByName((*it2)->getName());
+
             if (std::find(alreadyVisitedCities.begin(), alreadyVisitedCities.end(), *it2) == alreadyVisitedCities.end())
             {
                 queue.push(*it2);
-                if (cityWeights[returnCityByName((*it2)->getName())] > cityWeights[returnCityByName((top)->getName())] + (*it2)->getPoints())
+				
+                int neighborCityPoints = (*it2)->getPoints();
+                int distanceBetweenCurrentAndNeighbor = cityWeights[currentCity] + neighborCityPoints;
+                if (distanceBetweenCurrentAndNeighbor < cityWeights[neighborCity])
                 {
-                    cityWeights[returnCityByName((*it2)->getName())] = cityWeights[returnCityByName((top)->getName())] + (*it2)->getPoints();
+                    cityWeights[neighborCity] = distanceBetweenCurrentAndNeighbor;
                 }
             }
-
-            if (min >= cityWeights[returnCityByName((*it2)->getName())])
+            if (min >= cityWeights[neighborCity])
             {
-                previous[returnCityByName((top)->getName())] = returnCityByName((*it2)->getName());
-                min = cityWeights[returnCityByName((*it2)->getName())];
+                previous[currentCity] = neighborCity;
+                min = cityWeights[neighborCity];
             }
         }		
     }
@@ -257,16 +262,20 @@ std::string Server::shortestPath(const City *departureCity, const City *destinat
     {
         finalString += " is via ";
         City *current = returnCityByName((destinationCity)->getName());
-        while (previous[returnCityByName((current)->getName())]->getName() != departureCity->getName())
+        std::string nameOfCurrentCity = current->getName();
+        while (nameOfCurrentCity != departureCity->getName())
         {
-            finalString += previous[returnCityByName((current)->getName())]->getName() + " ";
+            finalString += nameOfCurrentCity + " ";
             current = previous[returnCityByName((current)->getName())];
+            nameOfCurrentCity = current->getName();
         }
         finalString += "and";
     }
 
     finalString += " has " + std::to_string(cityWeights[returnCityByName(destinationCity->getName())]);
     finalString += " points";
+	
+    std::cout << finalString << std::endl;
 
     return finalString;
 }
