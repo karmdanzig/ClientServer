@@ -53,22 +53,22 @@ void Server::receiveFromClient()
         if(std::string(buffer) == "findpath")
         {
             recv(m_clientSocket, buffer, BUFFERSIZE, 0);
-            std::string firstCity = buffer;
-            std::cout << "received from client " << firstCity << std::endl;
+            std::string departureCityName(buffer);
+            std::cout << "received from client " << departureCityName << std::endl;
             recv(m_clientSocket, buffer, BUFFERSIZE, 0);
-            std::string secondCity = buffer;
-            std::cout << "received from client " << secondCity << std::endl;
-            City *c1 = returnCityByName(firstCity);
-            City *c2 = returnCityByName(secondCity);
+            std::string destinationCityName(buffer);
+            std::cout << "received from client " << destinationCityName << std::endl;
+            City *departureCity = returnCityByName(departureCityName);
+            City *destinationCity = returnCityByName(destinationCityName);
 
-            if(c1 != nullptr && c2 != nullptr)
+            if(dynamic_cast<City*>(departureCity) && dynamic_cast<City*>(destinationCity))
             {
-                std::thread t(&Server::getMinimumDistanceAndSendBackToClient, this, c1, c2);
+                std::thread t(&Server::getMinimumDistanceAndSendBackToClient, this, departureCity, destinationCity);
                 t.detach();
             }
             else
             {
-                sendResultToClient("error");
+                sendResultToClient("Error occurred performing your request");
             }
         }
         else
