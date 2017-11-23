@@ -8,8 +8,8 @@
 class ClientAdmin
 {
 public:
-	ClientAdmin(const std::string& IP, const int port);
-	virtual ~ClientAdmin();
+    ClientAdmin(const std::string& IP, const int port);
+    virtual ~ClientAdmin();
     void init();
     void sendRequestToServer();
 
