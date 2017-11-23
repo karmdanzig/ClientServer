@@ -8,8 +8,8 @@
 class City
 {
 public:
-    City(const std::string& name, const int points);
-    virtual ~City();
+    City(const std::string& name, const int& points);
+    ~City();
     void addNeighbor(City* toAdd);
     const int getPoints() const;
     const std::vector<City*>& getNeighbors() const;
