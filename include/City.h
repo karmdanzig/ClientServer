@@ -18,9 +18,9 @@ public:
     friend std::ostream& operator<<(std::ostream& out, const City& toPrint);
 
 private:
-    int points;
-    std::string name;
-    std::vector<City*> neighbors;
+    int m_points;
+    std::string m_name;
+    std::vector<City*> m_neighbors;
 };
 
 #endif // CITY_H
