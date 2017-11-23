@@ -35,16 +35,16 @@ It will fail if weight or number of neighbors are equal or less than zero.
 If the city already exists in map, it will return an error and if one of the neighbors does not exist, it will not update the map, so the request will be discarded.
 
 example: Try to add Crawley with 2 points and 2 neighbors being London and Brighton
->./ClientServer ClientAdmin
->Enter name of city: 
-Crawley
->Enter points of city: 
-2
->Enter number of neighbors 
-2
->Enter neighbor number 1
-London
->Enter neighbor number 2
-Brighton
+>./ClientServer ClientAdmin <br>
+>Enter name of city: <br>
+Crawley <br>
+>Enter points of city: <br> 
+2 <br>
+>Enter number of neighbors <br>
+2 <br>
+>Enter neighbor number 1 <br>
+London <br>
+>Enter neighbor number 2 <br>
+Brighton <br>
 
 
