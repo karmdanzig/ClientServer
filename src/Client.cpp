@@ -8,7 +8,7 @@
 #define BUFFERSIZE 1024
 
 Client::Client(const std::string& IP, const int port)
-	: m_IP(IP), m_port(port), m_clientSocket(socket(PF_INET, SOCK_STREAM, IPPROTO_TCP))
+    : m_IP(IP), m_port(port), m_clientSocket(socket(PF_INET, SOCK_STREAM, IPPROTO_TCP))
 {
     std::cout << "Client happily serving at " << IP << " on port " << port << std::endl;
 
@@ -23,22 +23,22 @@ Client::~Client()
 
 void Client::init()
 {
-	if(connect(m_clientSocket,(struct sockaddr *)&m_socketStruct,sizeof(m_socketStruct)) != 0)
-	{
-		exit(1);
-	}
+    if(connect(m_clientSocket,(struct sockaddr *)&m_socketStruct,sizeof(m_socketStruct)) != 0)
+    {
+        exit(1);
+    }
 }
 
 void Client::sendRequestToServer(const std::string& startingCity, const std::string& destinationCity)
 {
-	const std::string findpath = "findpath";
-	send(m_clientSocket, findpath.c_str(), sizeof(findpath), 0);
+    const std::string findpath = "findpath";
+    send(m_clientSocket, findpath.c_str(), sizeof(findpath), 0);
     send(m_clientSocket, startingCity.c_str(), sizeof(startingCity), 0);
     send(m_clientSocket, destinationCity.c_str(), sizeof(destinationCity), 0);
 
     char response[BUFFERSIZE];
     recv(m_clientSocket, response, BUFFERSIZE-1, 0);
 
-    std::cout << "The shortest path between " << startingCity << " and " << destinationCity << " is " << response << std::endl;
+    std::cout << response << std::endl;
     close(m_clientSocket);
 }
