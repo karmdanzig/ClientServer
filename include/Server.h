@@ -11,7 +11,7 @@ class Server
 {
 public:
     Server(const std::string& IP, const int& port);
-    virtual ~Server();
+    ~Server();
     void init();
     void loadCities();
     void receiveFromClient();
