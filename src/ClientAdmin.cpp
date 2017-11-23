@@ -8,11 +8,32 @@
 
 #define BUFFERSIZE 1024
 
-ClientAdmin::ClientAdmin(const std::string& IP, const int port) : IP(IP), port(port)
+ClientAdmin::ClientAdmin(const std::string& IP, const int port)
+	: m_IP(IP), m_port(port), m_clientSocket(socket(PF_INET, SOCK_STREAM, IPPROTO_TCP))
+{
+	std::cout << "ClientAdmin happily serving at " << m_IP << " on port " << m_port << std::endl;
+	m_socketStruct.sin_family = AF_INET;
+	m_socketStruct.sin_addr.s_addr = inet_addr((this->m_IP).c_str());
+	m_socketStruct.sin_port = htons(this->m_port);
+}
+
+ClientAdmin::~ClientAdmin()
+{
+}
+
+void ClientAdmin::init()
+{
+	if (connect(m_clientSocket, (struct sockaddr *)&m_socketStruct, sizeof(m_socketStruct)) != 0)
+	{
+		exit(1);
+	}
+
+}
+
+void ClientAdmin::sendRequestToServer()
 {
 	std::string toSend;
 
-	std::cout << "ClientAdmin happily serving at " << IP << " on port " << port << std::endl;
 	std::string nameOfCity;
 	std::cout << "Enter name of city: " << std::endl;
 	std::cin >> nameOfCity;
@@ -43,7 +64,7 @@ ClientAdmin::ClientAdmin(const std::string& IP, const int port) : IP(IP), port(p
 			std::cout << "cannot add self as neighbor" << std::endl;
 			return;
 		}
-		
+
 		if (i == numberOfNeighbors)
 		{
 			neighbors += inputNeighbor;
@@ -52,40 +73,25 @@ ClientAdmin::ClientAdmin(const std::string& IP, const int port) : IP(IP), port(p
 		{
 			neighbors += inputNeighbor + "|";
 		}
-		
+
 	}
 	toSend = nameOfCity + "|" + std::to_string(pointsOfCity) + "|" + neighbors;
 
 	std::cout << toSend << std::endl;
 
-	int clientSocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
-	sockaddr_in socketStruct;
-	socketStruct.sin_family = AF_INET;
-	socketStruct.sin_addr.s_addr = inet_addr((this->IP).c_str());
-	socketStruct.sin_port = htons(this->port);
-	if (connect(clientSocket, (struct sockaddr *)&socketStruct, sizeof(socketStruct)) != 0)
-	{
-		exit(1);
-	}
-
-	send(clientSocket, toSend.c_str(), sizeof(startingCity), 0);
+	send(m_clientSocket, toSend.c_str(), sizeof(toSend), 0);
 
 	char response[BUFFERSIZE];
-	recv(clientSocket, response, BUFFERSIZE - 1, 0);
-
-	if(response == 1)
+	recv(m_clientSocket, response, BUFFERSIZE - 1, 0);
+	std::cout << "here" << std::endl;
+	if(std::string(response) == "Success")
 	{
 		std::cout << "City added with success" << std::endl;
 	}
 	else
 	{
-		std::cout << "Error: city not added" << std::endl;
+		std::cout << "Error: " << std::string(response) << std::endl;
 	}
 
-	close(clientSocket);
-}
-
-ClientAdmin::~ClientAdmin()
-{
+	close(m_clientSocket);
 }

@@ -1,7 +1,6 @@
 #include "Server.h"
 #include <stdio.h>
 #include <sys/socket.h>
-#include <arpa/inet.h>
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
@@ -9,75 +8,77 @@
 #include <queue>
 #include <map>
 #include <thread>
+#include <sstream>
 
 #define BUFFERSIZE 1024
 
-Server::Server(const std::string& IP, const int port) : IP(IP), port(port)
+Server::Server(const std::string& IP, const int port) :
+	m_IP(IP), m_port(port), m_serverSocket(socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)), m_clientSocket(0)
 {
     std::cout << "Server happily serving at " << IP << " on port " << port << std::endl;
-
-    loadCities();
-
-    std::vector<std::string> cit;
-    cit.push_back("London");
-
-    addAnotherCity("Crawley", 2, cit);
-
-    printCities();
-
-    int serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    int clientSocket = 0;
-    sockaddr_in serverSocketStruct;
-    sockaddr_in clientSocketStruct;
-
-    const int enable = 1;
-    setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
-
-    serverSocketStruct.sin_family = AF_INET;
-    serverSocketStruct.sin_addr.s_addr = inet_addr((this->IP).c_str());
-    serverSocketStruct.sin_port = htons(this->port);
-
-    if (bind(serverSocket, (struct sockaddr*)&serverSocketStruct, sizeof(serverSocketStruct)) != 0)
-    {
-        exit(1);
-    }
-    if(listen(serverSocket, 0) != 0)
-    {
-        exit(1);
-    }
-
-    unsigned int sizeOfClientSocketStruct = sizeof(clientSocketStruct);
-
-    while(true)
-    {
-        clientSocket = accept(serverSocket, (struct sockaddr*)&clientSocketStruct, &sizeOfClientSocketStruct);
-        char buffer[BUFFERSIZE];
-        recv(clientSocket, buffer, BUFFERSIZE, 0);
-        std::string firstCity = buffer;
-        std::cout << "received from client " << firstCity << std::endl;
-        recv(clientSocket, buffer, BUFFERSIZE, 0);
-        std::string secondCity = buffer;
-        std::cout << "received from client " << secondCity << std::endl;
-        City *c1 = returnCityByName(firstCity);
-        City *c2 = returnCityByName(secondCity);
-
-        if(c1 != nullptr && c2 != nullptr)
-        {
-            std::thread t(&Server::shortestPath, this, c1, c2, clientSocket);
-            t.detach();
-        }
-        else
-        {
-            memset(buffer, 0, sizeof(buffer));
-            sprintf(buffer,"%s","error");
-            send(clientSocket, buffer, sizeof(buffer), 0);
-            close(clientSocket);
-        }
-    }
+    m_serverSocketStruct.sin_family = AF_INET;
+    m_serverSocketStruct.sin_addr.s_addr = inet_addr((this->m_IP).c_str());
+    m_serverSocketStruct.sin_port = htons(this->m_port);
 }
 
 Server::~Server()
 {
+}
+
+void Server::init()
+{
+    const int enable = 1;
+    setsockopt(m_serverSocket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
+
+    if (bind(m_serverSocket, (struct sockaddr*)&m_serverSocketStruct, sizeof(m_serverSocketStruct)) != 0)
+    {
+        exit(1);
+    }
+    if(listen(m_serverSocket, 0) != 0)
+    {
+        exit(1);
+    }
+}
+
+void Server::receiveFromClient()
+{
+	unsigned int sizeOfClientSocketStruct = sizeof(m_clientSocketStruct);
+
+	while(true)
+	{
+
+		m_clientSocket = accept(m_serverSocket, (struct sockaddr*)&m_clientSocketStruct, &sizeOfClientSocketStruct);
+		char buffer[BUFFERSIZE];
+		recv(m_clientSocket, buffer, BUFFERSIZE, 0);
+
+		if(std::string(buffer) == "findpath")
+		{
+			recv(m_clientSocket, buffer, BUFFERSIZE, 0);
+			std::string firstCity = buffer;
+			std::cout << "received from client " << firstCity << std::endl;
+			recv(m_clientSocket, buffer, BUFFERSIZE, 0);
+			std::string secondCity = buffer;
+			std::cout << "received from client " << secondCity << std::endl;
+			City *c1 = returnCityByName(firstCity);
+			City *c2 = returnCityByName(secondCity);
+
+			if(c1 != nullptr && c2 != nullptr)
+			{
+				std::thread t(&Server::getMinimumDistanceAndSendBackToClient, this, c1, c2);
+				t.detach();
+			}
+			else
+			{
+				sendResultToClient("error");
+			}
+		}
+		else
+		{
+			std::thread t(&Server::addCityToCurrentListAndSendBackToClient, this, buffer);
+			t.detach();
+		}
+
+	}
 }
 
 void Server::loadCities()
@@ -167,68 +168,39 @@ void Server::loadCities()
     johnogroats->addNeighbor(edinburgh);
     johnogroats->addNeighbor(glasgow);
 
-    cities.push_back(*london);
-    cities.push_back(*birmingham);
-    cities.push_back(*manchester);
-    cities.push_back(*liverpool);
+    m_cities.push_back(*london);
+    m_cities.push_back(*birmingham);
+    m_cities.push_back(*manchester);
+    m_cities.push_back(*liverpool);
 
-    cities.push_back(*glasgow);
-    cities.push_back(*leeds);
-    cities.push_back(*edinburgh);
-    cities.push_back(*peterborough);
-    cities.push_back(*newcastle);
-    cities.push_back(*bath);
+    m_cities.push_back(*glasgow);
+    m_cities.push_back(*leeds);
+    m_cities.push_back(*edinburgh);
+    m_cities.push_back(*peterborough);
+    m_cities.push_back(*newcastle);
+    m_cities.push_back(*bath);
 
-    cities.push_back(*brighton);
-    cities.push_back(*leicester);
-    cities.push_back(*oxford);
-    cities.push_back(*cambridge);
-    cities.push_back(*sheffield);
-    cities.push_back(*johnogroats);
+    m_cities.push_back(*brighton);
+    m_cities.push_back(*leicester);
+    m_cities.push_back(*oxford);
+    m_cities.push_back(*cambridge);
+    m_cities.push_back(*sheffield);
+    m_cities.push_back(*johnogroats);
 }
 
 void Server::printCities()
 {
     std::cout << "Cities contains:\n";
-    for(std::vector<City>::const_iterator it = cities.begin(); it != cities.end(); ++it)
+    for(std::vector<City>::const_iterator it = m_cities.begin(); it != m_cities.end(); ++it)
     {
         std::cout << *it << '\n';
     }
 }
 
-bool Server::checkIfCityExists(const std::string& nameOfCityToCheckIfExists)
-{
-    bool existentCity = false;
-
-    for(std::vector<City>::const_iterator it = cities.begin(); it != cities.end(); ++it)
-    {
-        if((*it).getName() == nameOfCityToCheckIfExists)
-        {
-            existentCity = true;
-        }
-    }
-    return existentCity;
-}
-
-int Server::returnMinimumDistance(const std::string& from, const std::string& to)
-{
-    if(!checkIfCityExists(from))
-    {
-        std::cout << from << " does not exist" << std::endl;
-        return -1;
-    }
-    if(!checkIfCityExists(to))
-    {
-        std::cout << to << " does not exist" << std::endl;
-        return -1;
-    }
-    return 1;
-}
-
 City* Server::returnCityByName(const std::string& nameOfCityToRetrieve)
 {
     City *current = NULL;
-    for(std::vector<City>::iterator it = cities.begin(); it != cities.end(); ++it)
+    for(std::vector<City>::iterator it = m_cities.begin(); it != m_cities.end(); ++it)
     {
         if((*it).getName() == nameOfCityToRetrieve)
         {
@@ -238,20 +210,20 @@ City* Server::returnCityByName(const std::string& nameOfCityToRetrieve)
     return current;
 }
 
-void Server::shortestPath(const City *fromC, const City *toC, const int clientSocket)
+int Server::shortestPath(const City *departureCity, const City *destinationCity)
 {
-	std::map< City*, int> cityWeights;
-	std::vector< City*> alreadyVisitedCities;
+	std::map<City*, int> cityWeights;
+	std::vector<City*> alreadyVisitedCities;
 
-	for (std::vector<City>::iterator it = cities.begin(); it != cities.end(); ++it)
+	for (std::vector<City>::iterator it = m_cities.begin(); it != m_cities.end(); ++it)
 	{
 		cityWeights.insert(std::pair< City*, int>(&(*it), INT_MAX));
 	}
 
-	cityWeights[returnCityByName((fromC)->getName())] = fromC->getPoints();
+	cityWeights[returnCityByName((departureCity)->getName())] = departureCity->getPoints();
 
 	std::queue<City*> queue;
-	queue.push(returnCityByName(fromC->getName()));
+	queue.push(returnCityByName(departureCity->getName()));
 
 	while (!queue.empty())
 	{
@@ -274,28 +246,35 @@ void Server::shortestPath(const City *fromC, const City *toC, const int clientSo
 
 	}
 
-    sendToClientFromThread(clientSocket, cityWeights[returnCityByName(toC->getName())]);
+    return cityWeights[returnCityByName(destinationCity->getName())];
 }
 
-void Server::sendToClientFromThread(const int clientSocket, const int toSend)
+void Server::getMinimumDistanceAndSendBackToClient(const City* departureCity, const City* destinationCity)
 {
-    char buffer[BUFFERSIZE];
-    memset(buffer, 0, sizeof(buffer));
-    sprintf(buffer,"%d",toSend);
-    send(clientSocket, buffer, sizeof(buffer), 0);
-    close(clientSocket);
+	int minimumDistance = shortestPath(departureCity, destinationCity);
+	sendResultToClient(std::to_string(minimumDistance));
 }
 
-bool Server::addAnotherCity(const std::string& toParse)
+std::string Server::addAnotherCity(const std::string& toParse)
 {
-	bool resultCode = false;
+	std::string resultCode;
 
 	const char separator = '|';
 	std::vector<std::string> tokens;
 	std::istringstream split(toParse);
 	for (std::string each; std::getline(split, each, separator); tokens.push_back(each));
-	
+
 	std::vector<std::string> neighbors(tokens.begin() + 2, tokens.end());
+
+	for (std::vector<City>::iterator it = m_cities.begin(); it != m_cities.end(); ++it)
+	{
+		if (it->getName() == tokens[0])
+		{
+			resultCode = tokens[0] + " already present";
+			return resultCode;
+		}
+
+	}
 
 	City *newCity = new City(tokens[0], std::stoi(tokens[1]));
 
@@ -303,20 +282,39 @@ bool Server::addAnotherCity(const std::string& toParse)
 	{
 		City *neighbor = returnCityByName(*it);
 
-		if (dynamic_cast<City*>(neighbor))
+		if (!dynamic_cast<City*>(neighbor))
 		{
-			newCity->addNeighbor(neighbor);
-			neighbor->addNeighbor(newCity);
-		}
-		else
-		{
-			std::cout << "Neighbor not found" << std::endl;
+			resultCode = "Invalid neighbor " + *it;
 			delete newCity;
 			return resultCode;
 		}
-	
+
 	}
-	resultCode = true;
-	cities.push_back(*newCity);
+
+	for (std::vector<std::string>::const_iterator it = neighbors.begin(); it != neighbors.end(); ++it)
+	{
+		City *neighbor = returnCityByName(*it);
+		newCity->addNeighbor(neighbor);
+		neighbor->addNeighbor(newCity);
+	}
+
+	resultCode = "Success";
+	m_cities.push_back(*newCity);
 	return resultCode;
+}
+
+void Server::addCityToCurrentListAndSendBackToClient(const std::string& toParse)
+{
+	std::string resultCode = addAnotherCity(toParse);
+	sendResultToClient(resultCode);
+	printCities();
+}
+
+void Server::sendResultToClient(const std::string& toSend)
+{
+    char buffer[BUFFERSIZE];
+    memset(buffer, 0, sizeof(buffer));
+    sprintf(buffer,"%s",toSend.c_str());
+    send(m_clientSocket, buffer, sizeof(buffer), 0);
+    close(m_clientSocket);
 }

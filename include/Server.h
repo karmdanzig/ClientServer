@@ -4,25 +4,34 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <City.h>
+#include <arpa/inet.h>
+#include "City.h"
 
 class Server
 {
-    public:
-        Server(const std::string& IP, const int port);
-        virtual ~Server();
-    private:
-        std::string IP;
-        int port;
-        std::vector<City> cities;
-        void loadCities();
-        void printCities();
-        bool checkIfCityExists(const std::string& nameOfCityToCheckIfExists);
-        int returnMinimumDistance(const std::string& from, const std::string& to);
-        City* returnCityByName(const std::string& nameOfCityToRetrieve);
-        void shortestPath(const City *fromC, const City *toC, const int clientSocket);
-        void sendToClientFromThread(const int clientSocket, const int toSend);
-        bool addAnotherCity(const std::string& toParse);
+public:
+	Server(const std::string& IP, const int port);
+	virtual ~Server();
+	void init();
+	void loadCities();
+	void receiveFromClient();
+
+private:
+	std::string m_IP;
+	int m_port;
+	int m_serverSocket;
+	int m_clientSocket;
+	sockaddr_in m_serverSocketStruct;
+	sockaddr_in m_clientSocketStruct;
+	std::vector<City> m_cities;
+
+	void printCities();
+	City* returnCityByName(const std::string& nameOfCityToRetrieve);
+	void getMinimumDistanceAndSendBackToClient(const City *departureCity, const City *destinationCity);
+	int shortestPath(const City *departureCity, const City *destinationCity);
+	void sendResultToClient(const std::string& toSend);
+	std::string addAnotherCity(const std::string& toParse);
+	void addCityToCurrentListAndSendBackToClient(const std::string& toParse);
 };
 
 #endif // SERVER_H
